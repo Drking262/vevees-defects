@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+dataset/
+detect_dataset/
+runs/
+gradcam_out/
+detect_out/
+zeroshot_out/
+*.pt
+
+# Raw archival copies of data/set0N photos (zip + duplicate extracted files).
+# Not read by any code (evaluate_on_veneer.py only globs the top-level
+# data/set0N/*.jpg files) and two of the zips exceed GitHub's 100MB push limit.
+data/*/original/

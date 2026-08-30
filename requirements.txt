@@ -1,0 +1,14 @@
+# Install torch/torchvision from the CPU-only wheel index FIRST if you don't
+# already have a CUDA-enabled torch you want to keep -- see README "Setup" for
+# why (plain `pip install ultralytics` pulls a multi-GB CUDA build even on a
+# machine with no NVIDIA GPU):
+#
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+#   pip install -r requirements.txt
+
+ultralytics>=8.4
+Pillow
+scikit-image
+scipy
+PyYAML
+clip  # text encoder YOLO-World needs for pipeline/infer_zeroshot.py's set_classes()
