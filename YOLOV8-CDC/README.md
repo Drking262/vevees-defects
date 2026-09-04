@@ -31,13 +31,17 @@ speed, not correctness. Meant to run for real on a GPU (e.g. MetaCentrum).
 
 `./run_all.sh` runs the whole pipeline below in one shot -- venv, patch,
 dataset prep, train, evaluate. Auto-detects a GPU (`nvidia-smi`) and picks
-sane defaults for it (5 dataset shards, 150 epochs) vs CPU (1 shard, 1
-epoch -- a smoke test, not real training). Safe to re-run; skips work
-already done. Drop it straight into your own PBS job body:
+sane defaults for it (1 dataset shard -- the ~4k-image subset matching the
+Kaggle version of this dataset, 150 epochs) vs CPU (1 shard, 1 epoch -- a
+smoke test, not real training). Safe to re-run; skips work already done.
+Drop it straight into your own PBS job body:
 
 ```bash
-DEVICE=0 SHARDS=5 EPOCHS=150 BATCH=32 ./run_all.sh
+DEVICE=0 SHARDS=1 EPOCHS=150 BATCH=32 ./run_all.sh
 ```
+
+Pass `SHARDS=5` instead to train on the full ~20k-image HF dataset rather
+than the ~4k-image Kaggle-sized subset.
 
 See its header comment for all the env vars it accepts. The rest of this
 README explains what each step it calls actually does, for running them
@@ -68,9 +72,10 @@ version + this torch/numpy combination all work together.
 
 ```bash
 # 1. Build the YOLO dataset from the public wood-defects dataset.
-#    --shards 1 (default, ~4k images) for a quick local check;
-#    --shards 5 for the full ~20k images (what a real training run should use).
-python prepare_wood_defects.py --shards 5 --out-dir wood_defects_dataset
+#    --shards 1 (default, ~4k images, matching the Kaggle version of this
+#    dataset) for the training run this project actually uses;
+#    --shards 5 for the full ~20k-image HF dataset instead.
+python prepare_wood_defects.py --shards 1 --out-dir wood_defects_dataset
 
 # 2. Train (this is the part that needs a GPU -- see above).
 python train_cdc.py --data wood_defects_dataset/data.yaml --device 0 --epochs 150 --batch 32

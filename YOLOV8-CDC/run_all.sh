@@ -5,16 +5,17 @@
 # FORCE=1.
 #
 # Auto-detects a GPU (via `nvidia-smi`) and picks sane defaults for it
-# (5 dataset shards, 150 epochs) vs CPU (1 shard, 1 epoch -- a smoke test,
-# not real training; see the repo README for why CPU training isn't
-# realistic here). Override anything via environment variables, e.g. from
-# inside your own PBS script:
+# (1 dataset shard -- the ~4k-image subset matching the Kaggle version of
+# this dataset, 150 epochs) vs CPU (1 shard, 1 epoch -- a smoke test, not
+# real training; see the repo README for why CPU training isn't realistic
+# here). Override anything via environment variables, e.g. from inside your
+# own PBS script:
 #
-#   DEVICE=0 SHARDS=5 EPOCHS=150 BATCH=32 IMGSZ=640 ./run_all.sh
+#   DEVICE=0 SHARDS=1 EPOCHS=150 BATCH=32 IMGSZ=640 ./run_all.sh
 #
 # Env vars (all optional):
 #   DEVICE   ultralytics device string: '0', '0,1', or 'cpu' (default: auto)
-#   SHARDS   how many of the 5 wood_surface_defects parquet shards, 1-5 (default: 5 on GPU, 1 on CPU)
+#   SHARDS   how many of the 5 wood_surface_defects parquet shards, 1-5 (default: 1 -- the ~4k-image Kaggle-sized subset; pass 5 for the full ~20k-image HF dataset)
 #   EPOCHS   training epochs (default: 150 on GPU, 1 on CPU)
 #   BATCH    batch size (default: 32 on GPU, 8 on CPU)
 #   IMGSZ    training image size (default: 640)
@@ -44,7 +45,7 @@ if [[ "$DEVICE" == "cpu" ]]; then
     echo "1 epoch on 1 shard proves the pipeline works; it will not produce a usable detector."
     echo "See README.md for why (measured ~12.5 min/epoch on 3650 images on a 16-core CPU)."
 else
-    SHARDS="${SHARDS:-5}"
+    SHARDS="${SHARDS:-1}"
     EPOCHS="${EPOCHS:-150}"
     BATCH="${BATCH:-32}"
     log "GPU detected -- device=$DEVICE"

@@ -5,9 +5,10 @@ Bounding boxes in the source parquet are already normalized (xc, yc, w, h) in
 [0,1], i.e. already YOLO format -- no coordinate conversion needed, just a
 label-name -> class-index mapping and a file layout.
 
-Locally (CPU-only, slow) one shard (~4k images) is enough to smoke-test the
-pipeline. On a GPU machine (e.g. a MetaCentrum job), pass --shards 5 to use
-the full ~20k-image dataset.
+One shard (~4k images, the default) matches the Kaggle version of this
+dataset and is what this project's training runs actually use, on CPU
+(smoke test) or GPU alike. Pass --shards 5 on a GPU machine (e.g. a
+MetaCentrum job) instead to use the full ~20k-image HF dataset.
 
 Usage:
     python prepare_wood_defects.py                  # 1 shard (~4k images), default
