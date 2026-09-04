@@ -40,6 +40,16 @@ re-download, which does need network access. Everything else `run_all.sh`
 installs (`pip install torch ultralytics ...`) still needs network the first
 time it runs on a new machine -- that part isn't vendored.
 
+## MetaCentrum: `scripts/train_metacentrum.sh`
+
+`qsub YOLOV8-CDC/scripts/train_metacentrum.sh` submits a GPU job that loads
+Mambaforge and points `run_all.sh`'s `VENV_DIR` at the persistent `ptcg`
+conda env on shared storage instead of building a fresh venv every run --
+first run needs that env to already exist with a working CUDA torch (see
+the script's comments); after that, no network needed for packages. See
+`../YOLO26/README.md` for why the sibling pipeline deliberately does *not*
+reuse this same env.
+
 ## Quickest path: run_all.sh
 
 `./run_all.sh` runs the whole pipeline below in one shot -- venv, patch,

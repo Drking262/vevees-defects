@@ -1,8 +1,9 @@
 .venv/
 __pycache__/
 *.pyc
-*.pt
 *.cache
+*.pt
+!yolo26n.pt
+!yolo26s.pt
 runs/
-dataset/
 veneer_eval_out/

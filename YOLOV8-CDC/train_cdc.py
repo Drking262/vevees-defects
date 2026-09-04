@@ -16,8 +16,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from ultralytics import YOLO
+
+REPO_ROOT = Path(__file__).resolve().parent
 
 
 def main() -> None:
@@ -30,7 +33,13 @@ def main() -> None:
     p.add_argument("--device", default="0", help="'0' for first GPU, '0,1' for two, 'cpu' for CPU")
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--patience", type=int, default=30)
-    p.add_argument("--project", default="runs/detect")
+    # Must be absolute: ultralytics auto-inserts the task name ("detect")
+    # between its global runs_dir setting and a *relative* project path, so
+    # a relative "runs/detect" here doubles into ".../runs/detect/runs/detect"
+    # (and on a fresh MetaCentrum account, the global runs_dir defaults to
+    # somewhere under ~/.config/Ultralytics, not this repo, making run_all.sh's
+    # `ls runs/detect/wood_defects_cdc*/weights/best.pt` glob find nothing).
+    p.add_argument("--project", default=str(REPO_ROOT / "runs" / "detect"))
     p.add_argument("--name", default="wood_defects_cdc")
     args = p.parse_args()
 
