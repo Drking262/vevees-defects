@@ -14,6 +14,9 @@
 #   DEVICE=0 SHARDS=1 EPOCHS=150 BATCH=32 IMGSZ=640 ./run_all.sh
 #
 # Env vars (all optional):
+#   VENV_DIR path to the venv to create/reuse (default: .venv). Point this at
+#            a pre-built persistent env (e.g. on shared MetaCentrum storage)
+#            to skip venv creation and reuse its already-installed torch/CUDA.
 #   DEVICE   ultralytics device string: '0', '0,1', or 'cpu' (default: auto)
 #   SHARDS   how many of the 5 wood_surface_defects parquet shards, 1-5 (default: 1 -- the ~4k-image Kaggle-sized subset; pass 5 for the full ~20k-image HF dataset)
 #   EPOCHS   training epochs (default: 150 on GPU, 1 on CPU)
@@ -56,12 +59,15 @@ FORCE="${FORCE:-0}"
 echo "DEVICE=$DEVICE  SHARDS=$SHARDS  EPOCHS=$EPOCHS  BATCH=$BATCH  IMGSZ=$IMGSZ"
 
 # --- 2. venv + deps ----------------------------------------------------------
-log "Setting up venv"
-if [[ ! -d .venv ]]; then
-    python3 -m venv .venv
+# VENV_DIR lets a PBS job point this at a pre-built persistent env (with
+# torch/CUDA already installed) instead of creating a fresh local .venv.
+VENV_DIR="${VENV_DIR:-.venv}"
+log "Setting up venv ($VENV_DIR)"
+if [[ ! -d "$VENV_DIR" ]]; then
+    python3 -m venv "$VENV_DIR"
 fi
 # shellcheck disable=SC1091
-source .venv/bin/activate
+source "$VENV_DIR/bin/activate"
 
 if ! python -c "import torch" >/dev/null 2>&1; then
     if [[ "$DEVICE" == "cpu" ]]; then
