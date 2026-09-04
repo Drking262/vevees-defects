@@ -10,7 +10,7 @@
 # Watch with:   qstat -w $USER   /   qstat -f <jobid>
 
 set -euo pipefail
-cd "/storage/brno12-cerit/home/drking/vevees-defects/YOLOV8-CDC"
+cd "/storage/brno12-cerit/home/drking/diplomka/vevees-defects/YOLOV8-CDC"
 
 # 1. Load Mambaforge (MetaCentrum's standard tool for modern Python/CUDA stacks).
 module purge
