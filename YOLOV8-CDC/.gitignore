@@ -4,5 +4,4 @@ __pycache__/
 *.pt
 runs/
 dataset/
-wood_defects_dataset/
 veneer_eval_out/

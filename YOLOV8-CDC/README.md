@@ -22,10 +22,23 @@ torch/numpy version-skew bugs are patched along the way).
 
 This machine is CPU-only. A calibration run (1 epoch, 3650 images, imgsz
 512, batch 16) took **12.5 minutes** on a 16-core CPU -- a real training run
-(150+ epochs on the full ~20k-image dataset) is not realistic here. Verified
-the whole pipeline (build, forward, backward, checkpoint save/reload,
-validation) works correctly on CPU at small scale; the only blocker is
-speed, not correctness. Meant to run for real on a GPU (e.g. MetaCentrum).
+(150+ epochs, even on just the ~4k-image subset) is not realistic here.
+Verified the whole pipeline (build, forward, backward, checkpoint
+save/reload, validation) works correctly on CPU at small scale; the only
+blocker is speed, not correctness. Meant to run for real on a GPU (e.g.
+MetaCentrum).
+
+## Dataset ships in the repo -- no download needed
+
+`wood_defects_dataset/` (the ~4k-image subset, already converted to YOLO
+images+labels by `prepare_wood_defects.py`) is committed to this repo, not
+gitignored. A fresh `git clone` on MetaCentrum already has it -- `run_all.sh`
+detects `wood_defects_dataset/data.yaml` and skips the Hugging Face download
+entirely, only rewriting the absolute `path:` field in `data.yaml` to match
+the new checkout location. Only `FORCE=1` (or switching `SHARDS`) triggers a
+re-download, which does need network access. Everything else `run_all.sh`
+installs (`pip install torch ultralytics ...`) still needs network the first
+time it runs on a new machine -- that part isn't vendored.
 
 ## Quickest path: run_all.sh
 

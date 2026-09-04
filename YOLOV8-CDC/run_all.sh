@@ -77,11 +77,24 @@ log "Patching ultralytics (idempotent)"
 python setup_cdc_ultralytics.py
 
 # --- 4. dataset -----------------------------------------------------------
+# wood_defects_dataset/ (images + YOLO labels) ships committed in the repo --
+# this never re-downloads it on a fresh clone. FORCE=1 forces a re-download
+# (e.g. to switch SHARDS), which does need network access.
 DATA_YAML="wood_defects_dataset/data.yaml"
 if [[ -f "$DATA_YAML" && "$FORCE" != "1" ]]; then
-    log "Dataset already prepared at $DATA_YAML (set FORCE=1 to redo)"
+    log "Dataset already present at $DATA_YAML (set FORCE=1 to re-download)"
+    # data.yaml's `path:` is an absolute path baked in wherever it was last
+    # generated -- rewrite it to this checkout's location so a repo clone
+    # onto a different machine (e.g. MetaCentrum) still resolves correctly.
+    python - "$DATA_YAML" <<'PYEOF'
+import sys, yaml, pathlib
+p = pathlib.Path(sys.argv[1])
+d = yaml.safe_load(p.read_text())
+d["path"] = str(p.resolve().parent)
+p.write_text(yaml.dump(d, sort_keys=False))
+PYEOF
 else
-    log "Preparing wood_surface_defects dataset ($SHARDS shard(s))"
+    log "Preparing wood_surface_defects dataset ($SHARDS shard(s)) -- downloads from Hugging Face"
     python prepare_wood_defects.py --shards "$SHARDS" --out-dir wood_defects_dataset
 fi
 
