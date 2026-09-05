@@ -29,7 +29,12 @@ set -euo pipefail
 # ultralytics auto-enables a wandb logging callback whenever the wandb
 # package is importable, even though nothing here asks for it -- on a
 # login-less compute node (e.g. MetaCentrum) that crashes training with
-# "No API key configured". Disable it; no wandb setup needed.
+# "No API key configured". WANDB_MODE=disabled only mutes wandb's own
+# network calls -- it does NOT stop ultralytics from running the callback
+# (gated by its own persisted SETTINGS["wandb"], not this env var), and
+# ultralytics==8.1.0's bundled wb.py callback crashes on_train_end with
+# "DetMetrics has no attribute curves_results" regardless. Turn the
+# integration off at the source: ultralytics' own settings switch.
 export WANDB_MODE=disabled
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -83,6 +88,11 @@ if ! python -c "import torch" >/dev/null 2>&1; then
     fi
 fi
 pip install -q "ultralytics==8.1.0" pyyaml huggingface_hub pyarrow pillow
+
+# Actual wandb kill switch: gated by ultralytics' own persisted settings
+# (SETTINGS["wandb"]), not WANDB_MODE -- must run after ultralytics is
+# installed. See the WANDB_MODE comment above for why this is needed.
+python -c "from ultralytics.utils import SETTINGS; SETTINGS.update({'wandb': False})"
 
 # --- 3. patch ultralytics for the CDC architecture ---------------------------
 log "Patching ultralytics (idempotent)"
