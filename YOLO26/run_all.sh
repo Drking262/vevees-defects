@@ -87,6 +87,15 @@ if ! python -c "import torch" >/dev/null 2>&1; then
 fi
 pip install -q -U ultralytics  # YOLO26 needs a current ultralytics; unlike CDC this pipeline isn't version-pinned
 
+# ultralytics auto-enables a wandb logging callback whenever the wandb
+# package is importable, even though nothing here asks for it -- on a
+# login-less compute node (e.g. MetaCentrum) that crashes training with
+# "No API key configured". The real switch is ultralytics' own persisted
+# SETTINGS["wandb"] flag, not the WANDB_MODE env var (which only mutes
+# wandb's own network calls after ultralytics has already decided to use
+# it) -- see ../YOLOV8-CDC/run_all.sh for the failure this avoids.
+python -c "from ultralytics.utils import SETTINGS; SETTINGS.update({'wandb': False})"
+
 # --- 3. dataset -------------------------------------------------------------
 # Shared with YOLOV8-CDC -- vendored there, not re-downloaded or duplicated
 # here. Only the absolute `path:` field needs fixing up per checkout.
