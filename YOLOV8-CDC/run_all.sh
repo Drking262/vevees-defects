@@ -26,6 +26,12 @@
 
 set -euo pipefail
 
+# ultralytics auto-enables a wandb logging callback whenever the wandb
+# package is importable, even though nothing here asks for it -- on a
+# login-less compute node (e.g. MetaCentrum) that crashes training with
+# "No API key configured". Disable it; no wandb setup needed.
+export WANDB_MODE=disabled
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
 
