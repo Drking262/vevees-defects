@@ -1,29 +1,15 @@
 #!/usr/bin/env bash
-# End-to-end pipeline: venv -> fine-tune a pretrained YOLO26 checkpoint on
-# the (shared, already-vendored) wood-defects dataset -> evaluate on this
-# project's own veneer photos. Safe to re-run.
+# End-to-end pipeline: activate venv -> fine-tune a pretrained YOLO26
+# checkpoint on the (shared, already-vendored) wood-defects dataset ->
+# evaluate on this project's own veneer photos. Safe to re-run.
 #
-# Unlike ../YOLOV8-CDC/run_all.sh, this trains the current stock Ultralytics
-# model (YOLO26, released Jan 2026) instead of the custom CDC architecture --
-# fine-tuned from an official COCO-pretrained checkpoint (vendored in this
-# directory as yolo26n.pt/yolo26s.pt) rather than trained from scratch. It
-# reuses ../YOLOV8-CDC/wood_defects_dataset instead of downloading or
-# duplicating a second copy of the same ~4k images.
-#
-# Auto-detects a GPU (via `nvidia-smi`) and picks sane defaults for it
-# (yolo26s.pt, 100 epochs) vs CPU (yolo26n.pt, 1 epoch -- a smoke test, not
-# real training). Override anything via environment variables, e.g. from
-# inside your own PBS script:
+# Nothing gets installed here. VENV_DIR must already have torch + ultralytics
+# installed manually (see README.md / error message below).
 #
 #   DEVICE=0 MODEL=yolo26s.pt EPOCHS=100 BATCH=32 IMGSZ=640 ./run_all.sh
 #
 # Env vars (all optional):
-#   VENV_DIR path to the venv to create/reuse (default: .venv). Point this at
-#            a pre-built persistent env (e.g. on shared MetaCentrum storage)
-#            to skip venv creation and reuse its already-installed torch/CUDA.
-#            Use a DIFFERENT env than YOLOV8-CDC's -- that one pins
-#            ultralytics==8.1.0, this one needs a current release for YOLO26;
-#            sharing one env means whichever pipeline runs last wins.
+#   VENV_DIR path to your pre-built venv (default: .venv)
 #   DEVICE   ultralytics device string: '0', '0,1', or 'cpu' (default: auto)
 #   MODEL    pretrained checkpoint to fine-tune from, vendored in this dir (default: yolo26s.pt on GPU, yolo26n.pt on CPU)
 #   EPOCHS   training epochs (default: 100 on GPU, 1 on CPU)
@@ -67,25 +53,26 @@ if [[ ! -f "$MODEL" ]]; then
     exit 1
 fi
 
-# --- 2. venv + deps ----------------------------------------------------------
-# VENV_DIR lets a PBS job point this at a pre-built persistent env (with
-# torch/CUDA already installed) instead of creating a fresh local .venv.
+# --- 2. activate venv (must already have torch + ultralytics installed) ----
 VENV_DIR="${VENV_DIR:-.venv}"
-log "Setting up venv ($VENV_DIR)"
-if [[ ! -d "$VENV_DIR" ]]; then
-    python3 -m venv "$VENV_DIR"
+if [[ ! -f "$VENV_DIR/bin/activate" ]]; then
+    echo "error: no venv at $VENV_DIR -- create it yourself, e.g.:" >&2
+    echo "  python3 -m venv $VENV_DIR && source $VENV_DIR/bin/activate && pip install torch torchvision ultralytics" >&2
+    exit 1
 fi
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 
-if ! python -c "import torch" >/dev/null 2>&1; then
-    if [[ "$DEVICE" == "cpu" ]]; then
-        pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
-    else
-        pip install torch torchvision  # pulls a CUDA build; match your node's CUDA if this fails
-    fi
+MISSING="$(python -c "
+import importlib
+missing = [m for m in ('torch', 'ultralytics') if importlib.util.find_spec(m) is None]
+print(' '.join(missing))
+")"
+if [[ -n "$MISSING" ]]; then
+    echo "error: $VENV_DIR is missing: $MISSING -- install manually, e.g.:" >&2
+    echo "  source $VENV_DIR/bin/activate && pip install torch torchvision ultralytics" >&2
+    exit 1
 fi
-pip install -q -U ultralytics  # YOLO26 needs a current ultralytics; unlike CDC this pipeline isn't version-pinned
 
 # ultralytics auto-enables a wandb logging callback whenever the wandb
 # package is importable, even though nothing here asks for it -- on a
