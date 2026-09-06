@@ -18,17 +18,19 @@ before the first run:
 
 1. Request access on the model page (approval isn't instant, budget a few
    days): https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m
-2. Once approved: `pip install huggingface_hub[cli]` (if not already
-   present) then `huggingface-cli login` with a token from
-   https://huggingface.co/settings/tokens
+2. Once approved, install the one new dependency (torch/torchvision/numpy/
+   scikit-learn/Pillow are already used elsewhere in this repo and installed
+   system-wide; see the repo root `README.md`/`requirements.txt`) -- this
+   also pulls in `huggingface_hub`, which provides the `hf` CLI used next:
 
-Then install the one new dependency (torch/torchvision/numpy/scikit-learn/
-Pillow are already used elsewhere in this repo and installed system-wide;
-see the repo root `README.md`/`requirements.txt`):
+   ```bash
+   pip install transformers
+   ```
+3. Authenticate with a token from https://huggingface.co/settings/tokens:
 
-```bash
-pip install transformers
-```
+   ```bash
+   hf auth login
+   ```
 
 ## Usage
 
@@ -43,5 +45,32 @@ by default -- deliberately, since this machine has no GPU and limited disk;
 pass `--model facebook/dinov3-vitb16-pretrain-lvd1689m` (or larger) for a
 sharper feature map if disk/CPU time allow.
 
-Output: one `{name}_dinov3.png` per input photo in `dino_out/`, original +
-PCA feature map side by side.
+Output: one `{set}_{name}_{model}.png` per input photo in `--out` (default
+`dino_out/`), original + PCA feature map side by side. Prefixed by source
+folder since `set01/` and `set02/` reuse filenames for the same defect type.
+
+## While DINOv3 access is pending: DINOv2
+
+DINOv3 access is gated and can take days to approve (see above). DINOv2 is
+Apache-2.0, ungated, and architecturally close enough to sanity-check the
+approach in the meantime -- just point `--model` at it, e.g.
+`facebook/dinov2-with-registers-small` (see below for why "with-registers",
+not plain `dinov2-small`).
+
+## Noisy/speckled PCA map? Use a "with-registers" checkpoint
+
+Plain `dinov2-small`'s patch-feature PCA looks like random static in a grid
+pattern layered over the real signal. That's not a bug in this script -- it's
+DINOv2's own [high-norm "artifact" tokens](https://arxiv.org/abs/2309.16588):
+a handful of patch tokens repurpose themselves to carry global image info
+instead of local content, and PCA-ing raw patch features picks those up as
+noise. It is *not* something fine-tuning would fix.
+
+Fix: use a checkpoint trained with dedicated register tokens, which absorb
+that global-info role and leave the patch grid clean --
+`facebook/dinov2-with-registers-small` (still zero-shot, no training) instead
+of `facebook/dinov2-small`. Confirmed directly on this dataset: the same
+knot photo went from a speckled background with a barely-there knot signal
+to a smooth gradient with the knot as one solid, sharply-bounded blob.
+DINOv3 has registers built in from the start (`num_register_tokens=4` in its
+config, already handled by this script), so this shouldn't be needed there.

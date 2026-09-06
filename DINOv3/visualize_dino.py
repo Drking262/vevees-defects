@@ -92,7 +92,7 @@ def main() -> None:
     model = AutoModel.from_pretrained(args.model)
     model.eval()
     patch_size = model.config.patch_size
-    num_registers = getattr(model.config, "num_register_tokens", 4)
+    num_registers = getattr(model.config, "num_register_tokens", 0)
 
     for f in files:
         image = load_resized(f, args.long_side, patch_size)
@@ -118,11 +118,15 @@ def main() -> None:
         axes[0].set_title(Path(f).name, fontsize=9)
         axes[0].axis("off")
         axes[1].imshow(rgb_map)
-        axes[1].set_title(f"DINOv3 patch-feature PCA ({grid_w}x{grid_h} patches)", fontsize=9)
+        axes[1].set_title(f"{args.model} patch-feature PCA ({grid_w}x{grid_h} patches)", fontsize=9)
         axes[1].axis("off")
         fig.tight_layout()
 
-        out_path = out_dir / f"{Path(f).stem}_dinov3.png"
+        # set01/ and set02/ reuse filenames for the same defect type (e.g. both
+        # have a dub_bel.jpg) -- prefix with the parent dir so outputs from the
+        # two sets don't silently overwrite each other.
+        model_slug = args.model.split("/")[-1]
+        out_path = out_dir / f"{Path(f).parent.name}_{Path(f).stem}_{model_slug}.png"
         fig.savefig(out_path, dpi=130)
         plt.close(fig)
         print(f"wrote {out_path}")
