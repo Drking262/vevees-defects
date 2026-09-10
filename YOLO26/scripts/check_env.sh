@@ -54,9 +54,12 @@ except Exception as e:
     print('ultralytics FAILED:', repr(e))
 "
 
-section "disk quota (installs can silently fail/truncate over quota)"
-quota -s 2>&1
-df -h "$VENV_DIR" 2>&1
+section "disk usage (installs can silently fail/truncate over quota)"
+# du, not df/quota -s: df reports the whole shared cluster filesystem (not
+# your personal allocation), and quota -s queries every storage on your
+# account including ones this node can't reach -- both are noise here.
+du -sh "$VENV_DIR" 2>&1
+du -sh "$(dirname "$VENV_DIR")" 2>&1
 
 deactivate 2>/dev/null
 echo
