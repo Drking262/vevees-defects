@@ -99,9 +99,10 @@ log "Patching ultralytics (idempotent)"
 python setup_cdc_ultralytics.py
 
 # --- 4. dataset -----------------------------------------------------------
-# wood_defects_dataset/ (images + YOLO labels) ships committed in the repo --
-# this never re-downloads it on a fresh clone. FORCE=1 forces a re-download
-# (e.g. to switch SHARDS), which does need network access.
+# wood_defects_dataset/ (images + YOLO labels) is gitignored -- if it's
+# already present on disk this is a no-op, otherwise it's downloaded and
+# converted below. FORCE=1 forces a re-download (e.g. to switch SHARDS),
+# which does need network access.
 DATA_YAML="wood_defects_dataset/data.yaml"
 if [[ -f "$DATA_YAML" && "$FORCE" != "1" ]]; then
     log "Dataset already present at $DATA_YAML (set FORCE=1 to re-download)"

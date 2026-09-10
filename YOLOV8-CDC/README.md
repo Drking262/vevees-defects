@@ -28,17 +28,20 @@ save/reload, validation) works correctly on CPU at small scale; the only
 blocker is speed, not correctness. Meant to run for real on a GPU (e.g.
 MetaCentrum).
 
-## Dataset ships in the repo -- no download needed
+## Dataset is gitignored, not vendored
 
-`wood_defects_dataset/` (the ~4k-image subset, already converted to YOLO
-images+labels by `prepare_wood_defects.py`) is committed to this repo, not
-gitignored. A fresh `git clone` on MetaCentrum already has it -- `run_all.sh`
-detects `wood_defects_dataset/data.yaml` and skips the Hugging Face download
-entirely, only rewriting the absolute `path:` field in `data.yaml` to match
-the new checkout location. Only `FORCE=1` (or switching `SHARDS`) triggers a
-re-download, which does need network access. Everything else `run_all.sh`
-installs (`pip install torch ultralytics ...`) still needs network the first
-time it runs on a new machine -- that part isn't vendored.
+`wood_defects_dataset/` (the ~4k-image subset, converted to YOLO
+images+labels by `prepare_wood_defects.py` from the source dataset above)
+is gitignored, not committed -- an 866MB dataset doesn't belong in git
+history. `run_all.sh` regenerates it automatically: it detects whether
+`wood_defects_dataset/data.yaml` already exists on disk and, if so, only
+rewrites the absolute `path:` field to match the current checkout location;
+otherwise it downloads from Hugging Face (`iluvvatar/wood_surface_defects`)
+and runs `prepare_wood_defects.py`, which does need network access. Only
+`FORCE=1` (or switching `SHARDS`) forces that re-download even when the
+dataset is already present. Everything else `run_all.sh` installs
+(`pip install torch ultralytics ...`) also needs network the first time it
+runs on a new machine.
 
 ## MetaCentrum: `scripts/train_metacentrum.sh`
 

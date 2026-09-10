@@ -6,9 +6,18 @@ runs/
 gradcam_out/
 detect_out/
 zeroshot_out/
+viz_out/
 *.pt
 
 # Raw archival copies of data/set0N photos (zip + duplicate extracted files).
 # Not read by any code (evaluate_on_veneer.py only globs the top-level
 # data/set0N/*.jpg files) and two of the zips exceed GitHub's 100MB push limit.
 data/*/original/
+
+# Vendored external dataset (~866MB) -- regenerate with prepare_wood_defects.py
+# instead of pushing it; run_all.sh already auto-downloads it when missing.
+YOLOV8-CDC/wood_defects_dataset/
+YOLOV8-CDC/yolov8_cdc_runs/
+
+# Personal working document, not project code/data.
+vevees-defects_progress_report.docx
