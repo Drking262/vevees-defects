@@ -16,23 +16,19 @@ cd "/storage/brno12-cerit/home/drking/diplomka/vevees-defects/YOLOV8-CDC"
 module purge
 module add mambaforge
 
-# 2. Reuse the persistent PTCG venv in shared storage instead of building a
-#    fresh one -- it already has a working cu-build torch, so run_all.sh
-#    only needs to add the YOLO-specific deps (ultralytics etc.) on top.
+# 2. Reuse the persistent PTCG venv (already has a working CUDA torch) so
+#    run_all.sh only adds the YOLO-specific deps on top.
 export VENV_DIR="/storage/brno12-cerit/home/drking/.conda/envs/ptcg"
 
-# 3. Sanity-check the env has a working CUDA build before doing anything
-#    else -- a broken/empty env would otherwise fail late, mid-training.
+# 3. Sanity-check CUDA before doing anything else -- a broken env would
+#    otherwise fail late, mid-training.
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 python -c "import torch; assert torch.cuda.is_available(), 'no CUDA in venv — rebuild it with a cu121 torch wheel'"
 deactivate
 
-# 4. Run the pipeline. run_all.sh handles: venv activation (reusing
-#    VENV_DIR since it already exists, so no recreation), the ultralytics
-#    patch, dataset prep (the ~4k-image subset ships vendored in the repo,
-#    so no download needed), training, and evaluation on this project's
-#    own veneer photos.
+# 4. Run the pipeline: venv reuse, ultralytics patch, dataset prep, train,
+#    evaluate on this project's veneer photos.
 DEVICE=0 SHARDS=1 EPOCHS=150 BATCH=32 IMGSZ=640 ./run_all.sh
 
 echo "JOB DONE: $(ls -t runs/detect/wood_defects_cdc*/weights/best.pt 2>/dev/null | head -1)"

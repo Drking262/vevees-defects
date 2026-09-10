@@ -1,21 +1,15 @@
 """Defect class taxonomy for the YOLO classification pipeline.
 
-The raw dataset in data/set01 and data/set02 has no bounding-box annotations:
-each photo is a single high-res macro shot of an oak veneer sample, named
-after the defect it shows (e.g. dub_vypadavy_suk = falling-out knot). Per the
-project decision, the image filename IS the label, so this is treated as a
-whole-image classification problem rather than object detection.
+data/set01 and data/set02 have no box annotations -- filename IS the label
+(e.g. dub_vypadavy_suk = falling-out knot), so this is whole-image
+classification, not detection.
 
-Only defects that appear as a spatially localized, discrete blemish are
-included here (a knot, a chip-out, a rot patch) -- these are the ones a
-photo-classification model can plausibly key on. Classes describing a
-whole-panel characteristic (a grain/figure pattern, an overall color cast, a
-sapwood zone) are excluded: nothing in the frame localizes them, so a
-classifier would just be learning incidental lighting/crop differences.
+Only spatially localized, discrete blemishes are included (knot, chip-out,
+rot patch) -- whole-panel characteristics (grain pattern, color cast,
+sapwood zone) are excluded since nothing in the frame localizes them.
 
-INCLUDED_CLASSES maps a short class name -> list of filename prefixes (after
-stripping the "dub_" species tag and any trailing set/variant suffix like
-"_02", "_velke") that belong to it.
+INCLUDED_CLASSES maps a class name -> filename prefixes (after stripping the
+"dub_" species tag and variant suffixes like "_02", "_velke").
 """
 
 INCLUDED_CLASSES: dict[str, list[str]] = {
@@ -65,18 +59,11 @@ MIN_UNIQUE_FOR_VAL_SPLIT = 3  # classes with fewer unique images than this train
 RESIZE_MAX_SIDE = 1280  # longest side in px after prepare_dataset preprocessing
 JPEG_QUALITY = 90
 
-# Real YOLO *detection* (a box drawn around the defect), once
-# annotations/boxes.json has been hand-annotated via `python -m
-# pipeline.annotate` -- see pipeline/prepare_detect_dataset.py.
-#
-# Deliberately NOT just sorted(INCLUDED_CLASSES): detection is finer-grained
-# than the classifier's whole-image buckets. INCLUDED_CLASSES lumps
-# "cerny_soucek_drevokazny_hmyz" (black knot + wood-boring insect damage)
-# into one class because a single photo shows both and classification can
-# only assign one whole-image label -- but they're two different defects
-# that don't always co-occur, and the insect damage typically shows up as
-# several separate holes in one photo, not one. Detection can and should
-# tell them apart and box each occurrence separately, so they're split here.
+# Real YOLO detection classes, once annotations/boxes.json is hand-annotated
+# (see pipeline/prepare_detect_dataset.py). Finer-grained than
+# INCLUDED_CLASSES: detection splits "cerny_soucek_drevokazny_hmyz" into two
+# classes since they don't always co-occur and insect damage can show up as
+# multiple separate holes in one photo.
 DETECT_DATASET_DIR = "detect_dataset"
 DETECT_CLASS_NAMES = [
     "cerny_soucek",
@@ -87,11 +74,8 @@ DETECT_CLASS_NAMES = [
     "zarostle_suky",
 ]
 
-# Text prompts for pipeline/infer_zeroshot.py -- a pretrained open-vocabulary
-# detector (YOLO-World) that has never seen a wood photo, given plain-English
-# phrases for the 5 localized defect classes instead of trained box labels.
-# See that module's docstring for why this is worth trying (and its honest
-# result on this dataset).
+# Plain-English prompts for pipeline/infer_zeroshot.py's pretrained
+# open-vocabulary detector -- see that module's docstring for results.
 ZEROSHOT_PROMPTS: list[str] = [
     "wood knot",
     "knot hole in wood",

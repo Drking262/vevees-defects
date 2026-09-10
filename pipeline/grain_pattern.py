@@ -1,24 +1,16 @@
 """Veneer grain/figure-cut classifier + grain-runout/waviness reporting.
 
-`fladrova_dyha`, `polofladrova_dyha`, `rovnoleta_dyha` and
-`podelna_neodlupciva_zrcatka` describe the *cut/figure type* of the veneer
-(flame, half-flame, straight-grain, mirror-figure) -- a whole-panel texture
-property, not a localized blemish, so (like color_anomaly.py) this is kept
-out of the YOLO pipeline. Unlike the color defects though, there's no direct
-formula for "which figure type is this" -- it has to be learned from
-examples. With only 2 unique reference photos per class there's nowhere
-near enough data for a trained CNN to generalize, so this uses a simple,
-fully transparent nearest-neighbor match instead: extract a texture/
-orientation feature vector (pipeline/grain_features.py) for every reference
-photo and for the query image, and report which reference(s) it's closest
-to. It gets more accurate purely by adding more reference photos to
-data/set01 or data/set02 -- no retraining step required.
+`fladrova_dyha`, `polofladrova_dyha`, `rovnoleta_dyha`,
+`podelna_neodlupciva_zrcatka` describe the veneer's cut/figure type -- a
+whole-panel property, kept out of YOLO like color_anomaly.py. No direct
+formula exists, and 2 photos/class is too little for a trained CNN, so this
+does nearest-neighbor match on a texture/orientation feature vector
+(pipeline/grain_features.py) against reference photos -- gets more accurate
+purely by adding photos, no retraining.
 
-`zabeh` (grain runout near a streak) and `sval` (grain waviness) are
-reported as raw orientation metrics rather than forced into a yes/no flag:
-the 2 reference photos available per class disagreed with each other enough
-(see the module's calibration run) that a confident threshold isn't
-justified yet.
+`zabeh` (runout) and `sval` (waviness) are reported as raw orientation
+metrics, not a yes/no flag: the 2 reference photos per class disagree enough
+that a confident threshold isn't justified yet.
 
 Usage:
     python -m pipeline.grain_pattern path/to/image_or_folder

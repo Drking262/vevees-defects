@@ -1,14 +1,12 @@
 """Convert the iluvvatar/wood_surface_defects HF parquet shard(s) into a YOLO
-detection dataset (images/ + labels/ + data.yaml) for training yolov8_CDC.yaml.
+detection dataset (images/ + labels/ + data.yaml) for yolov8_CDC.yaml.
 
-Bounding boxes in the source parquet are already normalized (xc, yc, w, h) in
-[0,1], i.e. already YOLO format -- no coordinate conversion needed, just a
-label-name -> class-index mapping and a file layout.
+Source boxes are already normalized YOLO format (xc, yc, w, h in [0,1]) --
+just a label-name -> class-index mapping and file layout, no conversion.
 
-One shard (~4k images, the default) matches the Kaggle version of this
-dataset and is what this project's training runs actually use, on CPU
-(smoke test) or GPU alike. Pass --shards 5 on a GPU machine (e.g. a
-MetaCentrum job) instead to use the full ~20k-image HF dataset.
+One shard (~4k images, default) matches the Kaggle version and is what this
+project's training actually uses. Pass --shards 5 for the full ~20k-image
+dataset.
 
 Usage:
     python prepare_wood_defects.py                  # 1 shard (~4k images), default

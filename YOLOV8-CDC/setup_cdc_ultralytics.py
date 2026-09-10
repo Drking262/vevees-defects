@@ -1,23 +1,18 @@
 """Patch an installed `ultralytics` package to support the YOLOV8-CDC custom
-architecture (ADown2, C2f_DWRSeg, MultiDilatelocalAttention modules used by
+architecture (ADown2, C2f_DWRSeg, MultiDilatelocalAttention, from
 yolov8_CDC.yaml), and fix a torch>=2.6 `weights_only` incompatibility with
 older ultralytics releases.
 
-Why this exists: the YOLOV8-CDC repo (github.com/humblefactos1/YOLOV8-CDC)
-ships three custom nn.Module files (C-ADown.py, DWRSeg.py, MSDA.py) and a
-README saying to drop them into `ultralytics/nn/Addmodules` and register them
-in `ultralytics/nn/tasks.py` -- written against an ultralytics version from
-~late 2023. This script automates exactly that against a fresh `pip install
-ultralytics==8.1.0` (the oldest version we found with `dist2rbox` in
-utils/tal.py, which DWRSeg.py imports; older versions lack it). It does NOT
-replace ultralytics/utils/loss.py or metrics.py as the original README also
-suggests -- that CDC repo's replacements target an older internal API and
-would break OBBMetrics/ClassifyMetrics used elsewhere in 8.1.0. Skipping them
-means training uses stock CIoU loss instead of the paper's custom WIoU/
-Focaleriou loss -- the architecture (and its claimed accuracy contribution)
-is intact, only the loss-function enhancement is omitted.
+Automates the original repo's manual setup (drop 3 custom nn.Module files
+into `ultralytics/nn/Addmodules`, register them in `tasks.py`) against a
+fresh `ultralytics==8.1.0` install (oldest version with `dist2rbox`, which
+DWRSeg.py needs). Does NOT replace loss.py/metrics.py as the original README
+also suggests -- those target an older internal API and would break
+OBBMetrics/ClassifyMetrics in 8.1.0. Training uses stock CIoU loss instead
+of the paper's custom WIoU/Focaleriou loss; the architecture itself is
+intact.
 
-Idempotent: safe to re-run against the same ultralytics install.
+Idempotent: safe to re-run.
 
 Usage:
     pip install "ultralytics==8.1.0"

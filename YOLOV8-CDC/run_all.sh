@@ -1,40 +1,30 @@
 #!/usr/bin/env bash
-# End-to-end pipeline: venv -> patch ultralytics -> prepare wood-defects
-# dataset -> train yolov8_CDC -> evaluate on this project's own veneer
-# photos. Safe to re-run -- each step skips work that's already done unless
-# FORCE=1.
+# End-to-end: venv -> patch ultralytics -> prepare dataset -> train -> evaluate.
+# Safe to re-run -- skips work already done unless FORCE=1.
 #
-# Auto-detects a GPU (via `nvidia-smi`) and picks sane defaults for it
-# (1 dataset shard -- the ~4k-image subset matching the Kaggle version of
-# this dataset, 150 epochs) vs CPU (1 shard, 1 epoch -- a smoke test, not
-# real training; see the repo README for why CPU training isn't realistic
-# here). Override anything via environment variables, e.g. from inside your
-# own PBS script:
+# Auto-detects GPU vs CPU and picks defaults (GPU: 1 shard, 150 epochs; CPU:
+# 1 shard, 1 epoch smoke test -- see README for why). Override via env vars:
 #
 #   DEVICE=0 SHARDS=1 EPOCHS=150 BATCH=32 IMGSZ=640 ./run_all.sh
 #
 # Env vars (all optional):
-#   VENV_DIR path to the venv to create/reuse (default: .venv). Point this at
-#            a pre-built persistent env (e.g. on shared MetaCentrum storage)
-#            to skip venv creation and reuse its already-installed torch/CUDA.
+#   VENV_DIR path to venv to create/reuse (default: .venv) -- point at a
+#            pre-built persistent env to reuse its torch/CUDA install.
 #   DEVICE   ultralytics device string: '0', '0,1', or 'cpu' (default: auto)
-#   SHARDS   how many of the 5 wood_surface_defects parquet shards, 1-5 (default: 1 -- the ~4k-image Kaggle-sized subset; pass 5 for the full ~20k-image HF dataset)
-#   EPOCHS   training epochs (default: 150 on GPU, 1 on CPU)
-#   BATCH    batch size (default: 32 on GPU, 8 on CPU)
+#   SHARDS   1-5 of the wood_surface_defects parquet shards (default: 1 =
+#            ~4k-image Kaggle-sized subset; 5 = full ~20k-image dataset)
+#   EPOCHS   training epochs (default: 150 GPU, 1 CPU)
+#   BATCH    batch size (default: 32 GPU, 8 CPU)
 #   IMGSZ    training image size (default: 640)
-#   FORCE    1 = redo dataset prep even if wood_defects_dataset/data.yaml exists (default: 0)
+#   FORCE    1 = redo dataset prep even if data.yaml exists (default: 0)
 
 set -euo pipefail
 
-# ultralytics auto-enables a wandb logging callback whenever the wandb
-# package is importable, even though nothing here asks for it -- on a
-# login-less compute node (e.g. MetaCentrum) that crashes training with
-# "No API key configured". WANDB_MODE=disabled only mutes wandb's own
-# network calls -- it does NOT stop ultralytics from running the callback
-# (gated by its own persisted SETTINGS["wandb"], not this env var), and
-# ultralytics==8.1.0's bundled wb.py callback crashes on_train_end with
-# "DetMetrics has no attribute curves_results" regardless. Turn the
-# integration off at the source: ultralytics' own settings switch.
+# ultralytics auto-enables wandb logging whenever the package is importable,
+# crashing training on a login-less node ("No API key configured").
+# WANDB_MODE=disabled doesn't stop the callback itself (gated by
+# ultralytics' own persisted SETTINGS["wandb"]), so turn it off at the
+# source instead.
 export WANDB_MODE=disabled
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

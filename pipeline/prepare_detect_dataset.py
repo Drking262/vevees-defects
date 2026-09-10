@@ -7,19 +7,13 @@ YOLO detection dataset:
     detect_dataset/labels/val/...
     detect_dataset/data.yaml
 
-A photo can carry more than one box (and more than one class -- e.g. a knot
-photo that also has scattered insect holes), so this reads directly from
-whatever `annotations/boxes.json` actually contains rather than assuming one
-class per image.
+Reads directly from `annotations/boxes.json` rather than assuming one class
+per image, since a photo can carry multiple boxes/classes.
 
-Train/val split: with 1-3 annotated images per class this is far too little
-for a genuinely fair per-class holdout, especially once images can serve
-multiple classes at once -- stratifying properly wouldn't mean much at this
-scale. So: if every class that has *any* annotated images clears
-MIN_UNIQUE_FOR_VAL_SPLIT, hold out one whole image for val (same
-VAL_HOLDOUT_PER_CLASS as the classifier, but per-dataset here, not per-class,
-since one image can count toward several classes); otherwise mirror train
-into val, exactly like prepare_dataset.py, for the same reason.
+Train/val split: 1-3 images/class is too little for a fair per-class
+holdout, so if every class clears MIN_UNIQUE_FOR_VAL_SPLIT, hold out one
+whole image for val; otherwise mirror train into val, same as
+prepare_dataset.py.
 
 Usage: python -m pipeline.prepare_detect_dataset
 """

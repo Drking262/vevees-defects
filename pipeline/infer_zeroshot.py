@@ -1,32 +1,22 @@
 """Zero-shot localized-defect detection with a pretrained open-vocabulary
 model (YOLO-World) -- no wood-specific training at all.
 
-Every other localized-defect tool in this pipeline (pipeline/train.py,
-pipeline/train_detect.py) fine-tunes on this project's ~15 photos. This
-module instead loads YOLO-World's stock pretrained weights (auto-downloaded
-from Ultralytics, trained on large web image-text datasets, never shown a
-wood photo) and prompts it with plain-English phrases for the defect classes
-via `model.set_classes(...)` -- no training step, no annotation needed.
+Unlike the other localized-defect tools, which fine-tune on this project's
+~15 photos, this loads YOLO-World's stock weights and prompts it with
+plain-English defect phrases via `model.set_classes(...)` -- no training or
+annotation needed.
 
 Usage:
     python -m pipeline.infer_zeroshot path/to/photo.jpg
     python -m pipeline.infer_zeroshot path/to/folder/ --conf 0.01
     python -m pipeline.infer_zeroshot path/to/photo.jpg --classes "knot,crack,hole"
 
-Honest result on this dataset: it doesn't work. Across every included defect
-photo, at every image size tried (640 and 1280) and every prompt phrasing
-tried (specific like "insect hole in wood" and generic like "hole"/"dark
-spot"/"circle"), the highest raw confidence YOLO-World assigns to *any* box
-on *any* photo is under 0.03 -- indistinguishable from noise, versus the 0.25
-default confidence threshold a real detection normally clears. It very
-occasionally fires a box at conf ~0.01-0.03 on an arbitrary patch of grain,
-not consistently on the actual defect. The model was pretrained on natural/
-web imagery (people, furniture, everyday objects) -- close-up wood grain
-texture with a knot or rot patch looks nothing like what it learned "hole" or
-"crack" to mean, so it has no real signal to key on here. Kept in the
-pipeline as a documented negative result and so it's easy to re-try if a
-larger/newer open-vocab checkpoint becomes available -- not wired into
-pipeline/analyze.py's combined report since it has nothing reliable to add.
+**Doesn't work on this dataset.** Across every photo, image size (640/1280),
+and prompt tried, the highest confidence YOLO-World assigns to any box is
+under 0.03 -- noise, versus the 0.25 default threshold, and not consistently
+on the actual defect. Pretrained on natural/web imagery, so close-up wood
+grain doesn't resemble what it learned "hole"/"crack" to mean. Kept as a
+documented negative result, not wired into pipeline/analyze.py's report.
 """
 
 from __future__ import annotations

@@ -1,32 +1,23 @@
 """Classical (no-training-data) color-anomaly detector.
 
-Covers the defect classes that YOLO classify (pipeline/train.py) deliberately
-excludes because they're whole-panel color characteristics rather than a
-localized blemish: `bel` (sapwood), `rozbarvenost` (discoloration / a
-mismatched seam between two veneer strips), `barevny_rozdil_stredni` (color
-difference). With only 1-2 unique reference photos per class, training a
-classifier on these would just memorize -- these defects are directly
-measurable physical properties (regional color difference in CIELAB), so
-this computes them straight from the image instead of learning them.
+Covers whole-panel color classes YOLO excludes: `bel` (sapwood),
+`rozbarvenost` (mismatched glued-strip seam), `barevny_rozdil_stredni`
+(color difference). Too few reference photos to train on, and these are
+directly measurable CIELAB properties, so compute them instead of learning
+them.
 
-Method: split the (downsized) image into a grid of patches, take each
-patch's mean CIELAB color, and derive:
+Method: split image into a patch grid, take each patch's mean CIELAB color:
 
-  - color_diff_max_de:  largest pairwise CIEDE2000 distance between any two
-    patches -- a big value means the panel isn't color-uniform.
-  - seam_de: CIEDE2000 distance between the left half and right half's mean
-    color -- targets the "two glued strips don't match" look of rozbarvenost.
-  - sapwood_fraction: fraction of patches that are both lighter (L*) and
-    less saturated (chroma) than the panel's median -- sapwood is pale and
-    dull compared to heartwood.
-  - sapwood_edge_fraction: of the flagged sapwood-like patches, how many sit
-    in the outer quarter-columns of the panel -- sapwood runs along the
-    trunk's outer edge, so a real sapwood streak should be edge-concentrated
-    rather than scattered in the middle.
+  - color_diff_max_de: largest pairwise CIEDE2000 distance between patches
+    -- high means non-uniform panel.
+  - seam_de: CIEDE2000 distance between left/right half means -- targets
+    rozbarvenost's mismatched-strip look.
+  - sapwood_fraction: fraction of patches lighter + less saturated than
+    the panel median (sapwood is pale/dull vs. heartwood).
+  - sapwood_edge_fraction: of those, how many sit in the outer
+    quarter-columns -- sapwood runs along the trunk's edge.
 
-Thresholds below were picked by eyeballing these metrics across the whole
-dataset (see `python -m pipeline.color_anomaly --calibrate`), not fit on a
-held-out set -- they are a starting point to refine once more photos exist.
+Thresholds were eyeballed via `--calibrate`, not fit on held-out data.
 
 Usage:
     python -m pipeline.color_anomaly path/to/image_or_folder

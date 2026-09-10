@@ -1,29 +1,20 @@
-"""Visualize what DINOv3 (Meta's self-supervised ViT) picks up on across this
-project's oak veneer macro photos -- no training, just a forward pass through
-a frozen pretrained backbone. Patch token features are PCA'd down to 3
-components and rendered as an RGB map next to the original photo, so regions
-the model treats as similar (grain, knots, defects, ...) cluster into the
-same color. A third panel adds a PatchCore-style anomaly heatmap over the
-same patch features (see `shared_anomaly_map` / `patchcore_anomaly_map`).
+"""Visualize what DINOv3 picks up on across this project's oak veneer photos
+-- no training, just a forward pass. Patch tokens are PCA'd to 3 components
+and rendered as an RGB map next to the original photo (similar regions
+cluster into the same color). A third panel adds a PatchCore-style anomaly
+heatmap (see `shared_anomaly_map` / `patchcore_anomaly_map`).
 
-Two PatchCore memory-bank modes (`--bank-mode`):
-  reference (default) -- real PatchCore requires the bank to come from
-    defect-free photos, never from the photos being scored (otherwise greedy
-    coreset selection, which specifically hunts for outliers, preferentially
-    pools the defects themselves *into* the "normal" bank, and they then
-    match themselves -- exactly the failure this mode avoids). This dataset
-    has no photos labeled defect-free, but it does have whole-panel/figure-
-    cut classes with no discrete blemish (bel, rovnoleta_dyha, sval, ... --
-    pipeline/config.py's own EXCLUDED_CLASSES, excluded from the YOLO
-    classifier for the same reason). Those become the reference/bank set;
-    the 5 localized-defect classes (pipeline/config.py's INCLUDED_CLASSES)
-    are the query set actually being scored against that bank.
-  per-image -- the original per-photo bank (score a photo only against its
-    own patches, including its own defect -- a known weaker signal, see
-    patchcore_anomaly_map's docstring). Kept as a fallback/ablation.
+`--bank-mode`:
+  reference (default) -- bank comes from defect-free photos only
+    (pipeline/config.py's EXCLUDED_CLASSES), scored against the 5
+    localized-defect classes (INCLUDED_CLASSES). Real PatchCore requires
+    this separation -- otherwise coreset selection pools defects into their
+    own "normal" bank and they match themselves.
+  per-image -- original per-photo bank, including its own defect (weaker
+    signal, see patchcore_anomaly_map's docstring). Fallback/ablation.
 
 Requires a Hugging Face account with access to the gated DINOv3 weights --
-see README.md for the one-time request + login step.
+see README.md.
 
 Usage:
     python visualize_dino.py                 # runs on ../data/set01 + set02
@@ -126,17 +117,11 @@ def patchcore_anomaly_map(
     patch_tokens: np.ndarray, grid_h: int, grid_w: int, coreset_ratio: float
 ) -> np.ndarray:
     """PatchCore-lite anomaly score per patch: build a coreset memory bank
-    from this same image's own patch features, then score each patch by its
-    L2 distance to its nearest coreset neighbor.
-
-    The original PatchCore memory bank comes from a separate set of known-
-    defect-free training images; this project has no such labeled "normal"
-    set (every photo here is a specific named defect), so the bank is built
-    per-image instead. That still works as an anomaly cue because a veneer
-    photo is mostly repetitive grain background with one localized defect: a
-    grain patch almost always has a near-duplicate elsewhere in the same
-    photo (low distance to the bank), while a knot/rot/insect blemish is
-    locally unique and stands out as a high-distance blob.
+    from this same image's own patches, score each patch by L2 distance to
+    its nearest coreset neighbor. No labeled "normal" set exists here, so
+    the bank is per-image instead -- still works since a veneer photo is
+    mostly repetitive grain with one localized defect standing out as a
+    high-distance blob.
     """
     bank_idx = greedy_coreset(patch_tokens, coreset_ratio)
     dists = cdist(patch_tokens, patch_tokens[bank_idx])
@@ -158,27 +143,18 @@ def build_shared_bank(
     max_pool: int,
     seed: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Pool patches from the eligible ("reference", defect-free) photos only
-    and greedy-coreset a shared PatchCore memory bank out of that pool, so
-    every photo (reference or query/defect) is scored against what's normal
-    across the reference set -- never against defect patches, including its
-    own, since a non-eligible (query) photo never contributes to the pool at
-    all. `eligible` is a bool array, one entry per photo in all_patch_tokens.
+    """Pool patches from eligible ("reference", defect-free) photos only and
+    greedy-coreset a shared bank from that pool, so every photo is scored
+    against the reference set, never against defect patches. `eligible` is a
+    bool array, one entry per photo in all_patch_tokens.
 
-    Returns (bank_features, bank_global_idx, offsets):
-      - bank_global_idx indexes into the concatenation of all_patch_tokens
-        (i.e. "global patch id"), needed so shared_anomaly_map can exclude a
-        reference photo's own patches from trivially matching themselves in
-        the bank (a query photo's patches can never appear in the bank, so
-        this exclusion is a no-op for query photos).
-      - offsets[i] is the global-id of the first patch of photo i (for every
-        photo, reference or query), so a photo's local patch index can be
-        converted to/from a global id.
+    Returns (bank_features, bank_global_idx, offsets): bank_global_idx
+    indexes into the concatenation of all_patch_tokens, so
+    shared_anomaly_map can exclude a reference photo's own patches from
+    self-matching; offsets[i] is photo i's first global patch id.
 
-    Greedy k-center over the full reference pool (tens of thousands of
-    patches) is too slow to run directly -- max_pool bounds it by randomly
-    subsampling the pool first when it's larger than that, then
-    coreset-selecting the bank from the (capped) pool.
+    max_pool bounds the too-slow-otherwise greedy k-center by randomly
+    subsampling the pool first when it's larger than that.
     """
     lengths = [t.shape[0] for t in all_patch_tokens]
     offsets = np.cumsum([0] + lengths)[:-1]

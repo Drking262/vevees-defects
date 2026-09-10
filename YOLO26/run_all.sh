@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# End-to-end pipeline: activate venv -> fine-tune a pretrained YOLO26
-# checkpoint on the (shared, already-vendored) wood-defects dataset ->
-# evaluate on this project's own veneer photos. Safe to re-run.
+# End-to-end: activate venv -> fine-tune pretrained YOLO26 on the shared
+# wood-defects dataset -> evaluate on this project's veneer photos. Safe to
+# re-run.
 #
-# Nothing gets installed here. VENV_DIR must already have torch + ultralytics
-# installed manually (see README.md / error message below).
+# Nothing gets installed here -- VENV_DIR must already have torch +
+# ultralytics installed (see README.md).
 #
 #   DEVICE=0 MODEL=yolo26s.pt EPOCHS=100 BATCH=32 IMGSZ=640 ./run_all.sh
 #
 # Env vars (all optional):
 #   VENV_DIR path to your pre-built venv (default: .venv)
 #   DEVICE   ultralytics device string: '0', '0,1', or 'cpu' (default: auto)
-#   MODEL    pretrained checkpoint to fine-tune from, vendored in this dir (default: yolo26s.pt on GPU, yolo26n.pt on CPU)
-#   EPOCHS   training epochs (default: 100 on GPU, 1 on CPU)
-#   BATCH    batch size (default: 32 on GPU, 8 on CPU)
+#   MODEL    pretrained checkpoint, vendored here (default: yolo26s.pt GPU, yolo26n.pt CPU)
+#   EPOCHS   training epochs (default: 100 GPU, 1 CPU)
+#   BATCH    batch size (default: 32 GPU, 8 CPU)
 #   IMGSZ    training image size (default: 640)
 
 set -euo pipefail

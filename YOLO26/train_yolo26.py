@@ -1,16 +1,13 @@
 """Fine-tune a stock, pretrained Ultralytics YOLO26 detection model on the
-same wood-defects dataset used by ../YOLOV8-CDC (prepared once, shared from
-there -- see its data.yaml, not duplicated here).
+same wood-defects dataset used by ../YOLOV8-CDC (shared, not duplicated).
 
-Unlike YOLOV8-CDC (a custom architecture trained from scratch, no pretrained
-weights available for it), YOLO26 ships official COCO-pretrained checkpoints,
-so this fine-tunes from one (yolo26n.pt / yolo26s.pt, vendored in this
-directory) instead of training from random init -- the standard approach,
-and a better fit for a ~4k-image dataset.
+Unlike YOLOV8-CDC (trained from scratch, no pretrained weights), YOLO26
+ships COCO-pretrained checkpoints, so this fine-tunes from one (yolo26n.pt /
+yolo26s.pt, vendored here) -- the standard approach, better fit for a
+~4k-image dataset.
 
-Thin wrapper around ultralytics' own train() so the actual resource request
-(GPU count, walltime, queue) stays in whatever PBS/qsub script wraps this --
-this script only knows about the ML side.
+Thin wrapper around ultralytics' train(); resource requests (GPU count,
+walltime, queue) live in whatever PBS/qsub script wraps this instead.
 
 Usage:
     # local CPU smoke test (slow)

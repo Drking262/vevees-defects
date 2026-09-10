@@ -1,23 +1,17 @@
 """Local, dependency-free web tool for drawing bounding boxes on photos.
 
-Real YOLO *detection* (a box drawn around each defect, not just a
-whole-image label) needs box coordinates to train on, and none exist in
-data/ -- every photo there is only labeled by its filename. With ~10-16
-relevant photos, hand-drawing boxes is fast, so this starts a tiny local
-HTTP server with a canvas-based annotator instead of pulling in a heavier
-tool (CVAT, labelImg) for such a small job.
+YOLO detection needs box coordinates, and none exist in data/ (photos are
+only labeled by filename). With ~10-16 photos, a tiny local HTTP server +
+canvas annotator is faster than pulling in CVAT/labelImg.
 
-A photo can have more than one defect (e.g. a knot photo that also shows
-scattered insect holes elsewhere in frame), so this draws *multiple* boxes
-per photo, each independently assigned a class (defaulting to the photo's
-filename-derived class, since that's usually the dominant one, but
-changeable per box).
+Draws *multiple* boxes per photo (a photo can show more than one defect,
+e.g. a knot plus scattered insect holes), each independently classed
+(defaults to the filename-derived class, changeable per box).
 
-Boxes are saved to annotations/boxes.json (repo root) as
-{image_path: [{"box": [x1,y1,x2,y2], "cls": "..."}, ...]} in normalized 0-1
-coordinates -- resolution independent, so they still apply after
-prepare_detect_dataset.py resizes the photos. This file is real manual work
-product, not regenerable -- it's not git-ignored.
+Saved to annotations/boxes.json as
+{image_path: [{"box": [x1,y1,x2,y2], "cls": "..."}, ...]}, normalized 0-1
+coords (resolution independent). Real manual work product -- not
+git-ignored.
 
 Usage:
     python -m pipeline.annotate

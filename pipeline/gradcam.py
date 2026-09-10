@@ -1,16 +1,11 @@
 """Grad-CAM heatmap for the YOLO classifier: shows *where* in the photo drove
-the predicted class, since the classifier itself only outputs a whole-image
-label with no localization (see README).
+the predicted class, since the classifier only outputs a whole-image label.
 
-This is an approximation, not a validated bounding box: it visualizes which
-pixels the network's gradients say mattered most for the predicted class,
-computed from the last spatial feature map before the classification head's
-global-average-pool (the Classify module's own conv, 1280 channels).
-
-Note the heatmap is drawn on the square, center-cropped view the model
-actually sees (Resize(shortest-edge)+CenterCrop, same as training/inference)
--- for a tall photo this crops off top/bottom, so a defect near the top or
-bottom edge of the original photo may fall outside the cropped view shown.
+Approximation, not a validated box: visualizes which pixels the gradients
+say mattered most, from the last spatial feature map before the
+classification head's pool. Drawn on the square, center-cropped view the
+model actually sees, so a defect near the top/bottom edge of a tall photo
+may fall outside the crop.
 
 Usage:
     python -m pipeline.gradcam path/to/image.jpg
